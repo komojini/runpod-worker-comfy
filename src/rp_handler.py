@@ -19,6 +19,28 @@ COMFY_POLLING_MAX_RETRIES = 100
 # Host where ComfyUI is running
 COMFY_HOST = "127.0.0.1:8188"
 
+
+def download_lora(
+        lora_id, 
+        base_dir="models/sdxl-dreambooth-lora", 
+        version="latest"
+    ) -> str:
+
+    save_dir=f"/comfyui/models/loras/{lora_id}"
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir, exist_ok=True)
+
+    boto_client, _ = rp_upload.get_boto_client()
+    bucket_name = os.environ.get("BUCKET_NAME", None)
+    save_path = f"{save_dir}/{version}.safetensors"
+    boto_client.download_file(
+        bucket_name,
+        save_path,
+        f"{base_dir}/{lora_id}/{version}.safetensors"
+    )
+    return save_path
+
+
 def check_server(url, retries=50, delay=500):
     """
     Check if a server is reachable via HTTP GET request
@@ -126,41 +148,48 @@ def process_output_images(outputs, job_id):
     """
 
     # The path where ComfyUI stores the generated images
-    COMFY_OUTPUT_PATH = os.environ.get('COMFY_OUTPUT_PATH', "/comfyui/output")
+    print(f"Comfy Outputs: {outputs}")
 
-    output_images = {}
+    COMFY_OUTPUT_PATH = os.environ.get('COMFY_OUTPUT_PATH', "/comfyui/output")
+    output_images = []
 
     for node_id, node_output in outputs.items():
         if "images" in node_output:
             for image in node_output["images"]:
-                output_images = image["filename"]
+                output_images.append(image["filename"])
 
     print(f"runpod-worker-comfy - image generation is done")
 
     # expected image output folder
-    local_image_path = f"{COMFY_OUTPUT_PATH}/{output_images}"
+    local_image_paths = [f"{COMFY_OUTPUT_PATH}/{output_image}" for output_image in output_images]
+    images = []
 
-    # The image is in the output folder
-    if os.path.exists(local_image_path):
-        print("runpod-worker-comfy - the image exists in the output folder")
+    for local_image_path in local_image_paths:
+        # The image is in the output folder
+        if os.path.exists(local_image_path):
+            print("runpod-worker-comfy - the image exists in the output folder")
 
-        if os.environ.get('BUCKET_ENDPOINT_URL', False):
-            # URL to image in AWS S3
-            image = rp_upload.upload_image(job_id, local_image_path)
+            if os.environ.get('BUCKET_ENDPOINT_URL', False):
+                # URL to image in AWS S3
+                image = rp_upload.upload_image(job_id, local_image_path)
+                print(f"image saved in aws bucket: {image}")
+                images.append(image)
+            else:
+                # base64 image
+                image = base64_encode(local_image_path)
+                images.append(image)
+
         else:
-            # base64 image
-            image = base64_encode(local_image_path)
-
-        return {
-            "status": "success", 
-            "message": image, 
-        }
-    else:
-        print("runpod-worker-comfy - the image does not exist in the output folder")
-        return {
-            "status": "error",
-            "message": f"the image does not exist in the specified output folder: {local_image_path}",
-        }
+            print("runpod-worker-comfy - the image does not exist in the output folder")
+            return {
+                "status": "error",
+                "message": f"the image does not exist in the specified output folder: {local_image_path}",
+            }
+    
+    return {
+        "status": "success",
+        "message": images
+    }
     
 
 def handler(job):

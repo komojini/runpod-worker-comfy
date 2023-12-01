@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Clone ComfyUI repository
-RUN git clone https://github.com/comfyanonymous/ComfyUI.git /comfyui
+RUN git clone https://github.com/komojini/ComfyUI.git /comfyui
 
 # Change working directory to ComfyUI
 WORKDIR /comfyui
