@@ -20,27 +20,6 @@ COMFY_POLLING_MAX_RETRIES = 100
 COMFY_HOST = "127.0.0.1:8188"
 
 
-def download_lora(
-        lora_id, 
-        base_dir="models/sdxl-dreambooth-lora", 
-        version="latest"
-    ) -> str:
-
-    save_dir=f"/comfyui/models/loras/{lora_id}"
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir, exist_ok=True)
-
-    boto_client, _ = rp_upload.get_boto_client()
-    bucket_name = os.environ.get("BUCKET_NAME", None)
-    save_path = f"{save_dir}/{version}.safetensors"
-    boto_client.download_file(
-        bucket_name,
-        save_path,
-        f"{base_dir}/{lora_id}/{version}.safetensors"
-    )
-    return save_path
-
-
 def check_server(url, retries=50, delay=500):
     """
     Check if a server is reachable via HTTP GET request
@@ -118,7 +97,7 @@ def base64_encode(img_path):
         encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
         return f"data:image/png;base64,{encoded_string}"
     
-def process_output_images(outputs, job_id):
+def process_output_images(outputs, job_id, output_path = None):
     """
     This function takes the "outputs" from image generation and the job ID,
     then determines the correct way to return the image, either as a direct URL
@@ -150,7 +129,10 @@ def process_output_images(outputs, job_id):
     # The path where ComfyUI stores the generated images
     print(f"Comfy Outputs: {outputs}")
 
-    COMFY_OUTPUT_PATH = os.environ.get('COMFY_OUTPUT_PATH', "/comfyui/output")
+    if output_path:
+        COMFY_OUTPUT_PATH = output_path
+    else:
+        COMFY_OUTPUT_PATH = os.environ.get('COMFY_OUTPUT_PATH', "/comfyui/output")
     output_images = []
 
     for node_id, node_output in outputs.items():
@@ -171,7 +153,7 @@ def process_output_images(outputs, job_id):
 
             if os.environ.get('BUCKET_ENDPOINT_URL', False):
                 # URL to image in AWS S3
-                image = rp_upload.upload_image(job_id, local_image_path)
+                image = rp_upload.upload_image(COMFY_OUTPUT_PATH, local_image_path)
                 print(f"image saved in aws bucket: {image}")
                 images.append(image)
             else:
@@ -258,7 +240,7 @@ def handler(job):
         return {"error": f"Error waiting for image generation: {str(e)}"}
 
     # Get the generated image and return it as URL in an AWS bucket or as base64
-    return process_output_images(history[prompt_id].get("outputs"), job["id"])
+    return process_output_images(history[prompt_id].get("outputs"), job["id"], job_input.get("output_path"))
 
 
 # Start the handler only if this script is run directly

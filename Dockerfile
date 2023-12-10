@@ -24,10 +24,13 @@ RUN git clone https://github.com/komojini/ComfyUI.git /comfyui
 # Change working directory to ComfyUI
 WORKDIR /comfyui
 
+RUN git clone https://github.com/komojini/ComfyUI_SDXL_DreamBooth_LoRA_CustomNodes.git ./custom_nodes/ComfyUI_SDXL_DreamBooth_LoRA_CustomNodes
+
 # Install ComfyUI dependencies
 RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 \
     && pip3 install --no-cache-dir xformers==0.0.21 \
-    && pip3 install -r requirements.txt
+    && pip3 install -r requirements.txt \
+    && pip3 install -r /comfyui/custom_nodes/ComfyUI_SDXL_DreamBooth_LoRA_CustomNodes/requirements.txt
 
 # Install runpod
 RUN pip3 install runpod requests
@@ -46,7 +49,7 @@ RUN wget -O models/loras/xl_more_art-full_v1.safetensors https://civitai.com/api
 WORKDIR /
 
 # Add the start and the handler
-ADD src/start.sh src/rp_handler.py example_inputs/test_input.json ./
+ADD src/start.sh src/rp_handler.py test_input.json ./
 RUN chmod +x /start.sh
 
 # Start the container
