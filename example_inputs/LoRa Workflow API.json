@@ -1,106 +1,106 @@
 {
-  "input": {
+    "input": {
       "prompt": {
-          "3": {
-              "inputs": {
-                  "seed": 797061021937642,
-                  "steps": 20,
-                  "cfg": 8,
-                  "sampler_name": "euler",
-                  "scheduler": "normal",
-                  "denoise": 1,
-                  "model": [
-                      "11",
-                      0
-                  ],
-                  "positive": [
-                      "6",
-                      0
-                  ],
-                  "negative": [
-                      "7",
-                      0
-                  ],
-                  "latent_image": [
-                      "5",
-                      0
-                  ]
-              },
-              "class_type": "KSampler"
+        "3": {
+          "inputs": {
+            "seed": 157691551724910,
+            "steps": 30,
+            "cfg": 8,
+            "sampler_name": "euler",
+            "scheduler": "normal",
+            "denoise": 1,
+            "model": [
+              "11",
+              0
+            ],
+            "positive": [
+              "6",
+              0
+            ],
+            "negative": [
+              "7",
+              0
+            ],
+            "latent_image": [
+              "5",
+              0
+            ]
           },
-          "4": {
-              "inputs": {
-                  "ckpt_name": "sd_xl_base_1.0.safetensors"
-              },
-              "class_type": "CheckpointLoaderSimple"
+          "class_type": "KSampler"
+        },
+        "4": {
+          "inputs": {
+            "ckpt_name": "sd_xl_base_1.0.safetensors"
           },
-          "5": {
-              "inputs": {
-                  "width": 512,
-                  "height": 512,
-                  "batch_size": 2
-              },
-              "class_type": "EmptyLatentImage"
+          "class_type": "CheckpointLoaderSimple"
+        },
+        "5": {
+          "inputs": {
+            "width": 1024,
+            "height": 1024,
+            "batch_size": 1
           },
-          "6": {
-              "inputs": {
-                  "text": "A photo of zwc cat",
-                  "clip": [
-                      "11",
-                      1
-                  ]
-              },
-              "class_type": "CLIPTextEncode"
+          "class_type": "EmptyLatentImage"
+        },
+        "6": {
+          "inputs": {
+            "text": "artistic photo of zwc cat wearing Santa costume, small cute santa hat, Christmas tree, Christmas style, Christmas concept, (Christmas:1.3), presents, (zwc cat:1.4), (midnight:1.5), (fancy:1.5), twinkle, colorful background, fancy wallpaper, a professional photo, 4k",
+            "clip": [
+              "11",
+              1
+            ]
           },
-          "7": {
-              "inputs": {
-                  "text": "text, watermark",
-                  "clip": [
-                      "11",
-                      1
-                  ]
-              },
-              "class_type": "CLIPTextEncode"
+          "class_type": "CLIPTextEncode"
+        },
+        "7": {
+          "inputs": {
+            "text": "text, watermark, low quality, day, bad body, monotone background, white wall, white background, bad hat",
+            "clip": [
+              "11",
+              1
+            ]
           },
-          "8": {
-              "inputs": {
-                  "samples": [
-                      "3",
-                      0
-                  ],
-                  "vae": [
-                      "4",
-                      2
-                  ]
-              },
-              "class_type": "VAEDecode"
+          "class_type": "CLIPTextEncode"
+        },
+        "8": {
+          "inputs": {
+            "samples": [
+              "3",
+              0
+            ],
+            "vae": [
+              "4",
+              2
+            ]
           },
-          "11": {
-              "inputs": {
-                  "lora_name": "models/admin.safetensors",
-                  "strength_model": 1,
-                  "strength_clip": 1,
-                  "model": [
-                      "4",
-                      0
-                  ],
-                  "clip": [
-                      "4",
-                      1
-                  ]
-              },
-              "class_type": "S3Bucket_Load_LoRA"
+          "class_type": "VAEDecode"
+        },
+        "11": {
+          "inputs": {
+            "lora_name": "test/models/ms_zwc_cat_v11.safetensors",
+            "strength_model": 1,
+            "strength_clip": 1,
+            "model": [
+              "4",
+              0
+            ],
+            "clip": [
+              "4",
+              1
+            ]
           },
-          "13": {
-              "inputs": {
-                  "filename_prefix": "ComfyUI",
-                  "images": [
-                      "8",
-                      0
-                  ]
-              },
-              "class_type": "SaveImage"
-          }
+          "class_type": "S3Bucket_Load_LoRA"
+        },
+        "25": {
+          "inputs": {
+            "filename_prefix": "ComfyUI",
+            "images": [
+              "8",
+              0
+            ]
+          },
+          "class_type": "SaveImage"
+        }
       }
+    }
   }
-}

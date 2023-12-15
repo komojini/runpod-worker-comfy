@@ -24,7 +24,10 @@ RUN git clone https://github.com/komojini/ComfyUI.git /comfyui
 # Change working directory to ComfyUI
 WORKDIR /comfyui
 
+# Clone my custom nodes
 RUN git clone https://github.com/komojini/ComfyUI_SDXL_DreamBooth_LoRA_CustomNodes.git ./custom_nodes/ComfyUI_SDXL_DreamBooth_LoRA_CustomNodes
+RUN git clone https://github.com/komojini/ComfyUI_Prompt_Template_CustomNodes.git ./custom_nodes/ComfyUI_Prompt_Template_CustomNodes
+
 
 # Install ComfyUI dependencies
 RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 \

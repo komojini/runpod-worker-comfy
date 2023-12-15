@@ -1,5 +1,5 @@
 import runpod
-from runpod.serverless.utils import rp_upload
+from runpod.serverless.utils.rp_upload import get_boto_client
 import json
 import urllib.request
 import urllib.parse
@@ -7,6 +7,7 @@ import time
 import os
 import requests
 import base64
+import uuid
 
 # Time to wait between API check attempts in milliseconds
 COMFY_API_AVAILABLE_INTERVAL_MS = 50
@@ -15,7 +16,7 @@ COMFY_API_AVAILABLE_MAX_RETRIES = 500
 # Time to wait between poll attempts in milliseconds
 COMFY_POLLING_INTERVAL_MS = 250
 # Maximum number of poll attempts
-COMFY_POLLING_MAX_RETRIES = 100
+COMFY_POLLING_MAX_RETRIES = 500
 # Host where ComfyUI is running
 COMFY_HOST = "127.0.0.1:8188"
 
@@ -96,7 +97,66 @@ def base64_encode(img_path):
     with open(img_path, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
         return f"data:image/png;base64,{encoded_string}"
-    
+
+
+
+# ---------------------------------------------------------------------------- #
+#                                 Upload Image                                 #
+# ---------------------------------------------------------------------------- #
+def upload_image(job_id, image_location, result_index=0, results_list=None, bucket=None):  # pragma: no cover
+    '''
+    Upload a single file to bucket storage.
+    '''
+    image_name = str(uuid.uuid4())[:8]
+    boto_client, _ = get_boto_client()
+    file_extension = os.path.splitext(image_location)[1]
+    content_type = "image/" + file_extension.lstrip(".")
+
+    with open(image_location, "rb") as input_file:
+        output = input_file.read()
+
+    if boto_client is None:
+        # Save the output to a file
+        print("No bucket endpoint set, saving to disk folder 'simulated_uploaded'")
+        print("If this is a live endpoint, please reference the following:")
+        print("https://github.com/runpod/runpod-python/blob/main/docs/serverless/utils/rp_upload.md")  # pylint: disable=line-too-long
+
+        os.makedirs("simulated_uploaded", exist_ok=True)
+        sim_upload_location = f"simulated_uploaded/{image_name}{file_extension}"
+
+        with open(sim_upload_location, "wb") as file_output:
+            file_output.write(output)
+
+        if results_list is not None:
+            results_list[result_index] = sim_upload_location
+
+        return sim_upload_location
+
+    if not bucket:
+        bucket = os.getenv("BUCKET_NAME")
+
+    if not bucket:
+        bucket = time.strftime('%m-%y')
+    boto_client.put_object(
+        Bucket=f'{bucket}',
+        Key=f'{job_id}/{image_name}{file_extension}',
+        Body=output,
+        ContentType=content_type
+    )
+
+    presigned_url = boto_client.generate_presigned_url(
+        'get_object',
+        Params={
+            'Bucket': f'{bucket}',
+            'Key': f'{job_id}/{image_name}{file_extension}'
+        }, ExpiresIn=604800)
+
+    if results_list is not None:
+        results_list[result_index] = presigned_url
+
+    return presigned_url
+
+
 def process_output_images(outputs, job_id, output_path = None):
     """
     This function takes the "outputs" from image generation and the job ID,
@@ -129,10 +189,8 @@ def process_output_images(outputs, job_id, output_path = None):
     # The path where ComfyUI stores the generated images
     print(f"Comfy Outputs: {outputs}")
 
-    if output_path:
-        COMFY_OUTPUT_PATH = output_path
-    else:
-        COMFY_OUTPUT_PATH = os.environ.get('COMFY_OUTPUT_PATH', "/comfyui/output")
+
+    COMFY_OUTPUT_PATH = os.environ.get('COMFY_OUTPUT_PATH', "/comfyui/output")
     output_images = []
 
     for node_id, node_output in outputs.items():
@@ -153,7 +211,7 @@ def process_output_images(outputs, job_id, output_path = None):
 
             if os.environ.get('BUCKET_ENDPOINT_URL', False):
                 # URL to image in AWS S3
-                image = rp_upload.upload_image(COMFY_OUTPUT_PATH, local_image_path)
+                image = upload_image(output_path, local_image_path)
                 print(f"image saved in aws bucket: {image}")
                 images.append(image)
             else:
@@ -188,6 +246,12 @@ def handler(job):
         dict: A dictionary containing either an error message or a success status with generated images.
     """
     job_input = job["input"]
+
+    bucket_creds = job_input.get("bucket_creds")
+    if bucket_creds:
+        os.environ["BUCKET_ENDPOINT_URL"] = bucket_creds.get("endpointUrl")
+        os.environ["BUCKET_ACCESS_KEY_ID"] = bucket_creds.get("accessId")
+        os.environ["BUCKET_SECRET_ACCESS_KEY"] = bucket_creds.get("accessSecret")
 
     # Make sure that the ComfyUI API is available
     check_server(
