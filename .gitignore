@@ -7,3 +7,4 @@ simulated_uploaded
 __pycache__
 
 example_inputs/
+.example_inputs/
