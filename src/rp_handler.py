@@ -253,6 +253,8 @@ def handler(job):
         os.environ["BUCKET_ACCESS_KEY_ID"] = bucket_creds.get("accessId")
         os.environ["BUCKET_SECRET_ACCESS_KEY"] = bucket_creds.get("accessSecret")
 
+    polling_max_retries = job_input.get("polling_max_retries", COMFY_POLLING_MAX_RETRIES)
+
     # Make sure that the ComfyUI API is available
     check_server(
         f"http://{COMFY_HOST}",
@@ -288,7 +290,7 @@ def handler(job):
     print(f"runpod-worker-comfy - wait until image generation is complete")
     retries = 0
     try:
-        while retries < COMFY_POLLING_MAX_RETRIES:
+        while retries < polling_max_retries:
             history = get_history(prompt_id)
 
             # Exit the loop if we have found the history
