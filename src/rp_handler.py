@@ -247,11 +247,12 @@ def handler(job):
     """
     job_input = job["input"]
 
-    bucket_creds = job_input.get("bucket_creds")
-    if bucket_creds:
+    if "bucket_creds" in job_input:
+        bucket_creds = job_input.pop("bucket_creds")
         os.environ["BUCKET_ENDPOINT_URL"] = bucket_creds.get("endpointUrl")
         os.environ["BUCKET_ACCESS_KEY_ID"] = bucket_creds.get("accessId")
         os.environ["BUCKET_SECRET_ACCESS_KEY"] = bucket_creds.get("accessSecret")
+        os.environ["BUCKET_NAME"] = bucket_creds.get("bucketName")
 
     polling_max_retries = job_input.get("polling_max_retries", COMFY_POLLING_MAX_RETRIES)
 
@@ -268,11 +269,11 @@ def handler(job):
 
     # Is JSON?
     if isinstance(job_input, dict):
-        prompt = job_input
+        prompt = job_input.get("comfy_input")
     # Is String?
     elif isinstance(job_input, str):
         try:
-            prompt = json.loads(job_input)
+            prompt = json.loads(job_input).get("comfy_input")
         except json.JSONDecodeError:
             return {"error": "Invalid JSON format in 'prompt'"}
     else:
