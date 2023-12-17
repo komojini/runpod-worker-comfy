@@ -83,7 +83,7 @@
         },
         "11": {
           "inputs": {
-            "remote_lora_path_or_url": "test/models/jinwook_dog_v1.safetensors",
+            "remote_lora_path_or_url": "https://drive.google.com/uc?id=1aPM277uFZu_m7bAjJBS2Ia03dP5_fk0W",
             "strength_model": 1,
             "strength_clip": 1,
             "BUCKET_ENDPOINT_URL": "",
