@@ -8,6 +8,12 @@ import os
 import requests
 import base64
 import uuid
+import logging
+
+logger = logging.getLogger("runpod comfyui handler")
+FMT = "%(filename)-20s:%(lineno)-4d %(asctime)s %(message)s"
+logging.basicConfig(level=logging.DEBUG, format=FMT, handlers=[logging.StreamHandler()])
+
 
 # Time to wait between API check attempts in milliseconds
 COMFY_API_AVAILABLE_INTERVAL_MS = 50
@@ -187,6 +193,7 @@ def process_output_images(outputs, job_id, output_path = None):
     """
 
     # The path where ComfyUI stores the generated images
+    logger.info(f"\n\nComfy image generation finished. ")
     print(f"Comfy Outputs: {outputs}")
 
 
@@ -247,6 +254,17 @@ def handler(job):
     """
     job_input = job["input"]
 
+    logger.info(f"""
+
+    
+
+    Start handler ...
+    job: {job}
+
+
+        
+    """)
+
     if "bucket_creds" in job_input:
         bucket_creds = job_input.pop("bucket_creds")
         os.environ["BUCKET_ENDPOINT_URL"] = bucket_creds.get("endpointUrl")
@@ -255,6 +273,9 @@ def handler(job):
         os.environ["BUCKET_NAME"] = bucket_creds.get("bucketName")
 
     polling_max_retries = job_input.get("polling_max_retries", COMFY_POLLING_MAX_RETRIES)
+    output_path = job_input.get("output_path")
+
+    print(f"Polling max retries: {polling_max_retries}\nOutput path: {output_path}")
 
     # Make sure that the ComfyUI API is available
     check_server(
@@ -269,26 +290,39 @@ def handler(job):
 
     # Is JSON?
     if isinstance(job_input, dict):
-        prompt = job_input.get("comfy_input")
+        if "comfy_input" in job_input:
+            prompt = job_input["comfy_input"]
+        else:
+            print("comfyui not in job_input, job_input:", job_input)
+            prompt = job_input
     # Is String?
     elif isinstance(job_input, str):
         try:
-            prompt = json.loads(job_input).get("comfy_input")
+            prompt = json.loads(job_input)
+            if "comfy_input" in prompt:
+                prompt  = prompt["comfy_input"]
+            else:
+                print("comfyui not in prompt, prompt:", prompt)
         except json.JSONDecodeError:
             return {"error": "Invalid JSON format in 'prompt'"}
     else:
-        return {"error": "'prompt' must be a JSON object or a JSON-encoded string"}
+        return {"error": f"'prompt' must be a JSON object or a JSON-encoded string, job_input: {job_input}"}
+
+    print("Straing Queue ...")
+    print(f"Prompt: {prompt}")
 
     # Queue the prompt
     try:
         queued_prompt = queue_prompt(prompt)
+
+        print(f"Queued Prompt Return: {queued_prompt}")
         prompt_id = queued_prompt["prompt_id"]
         print(f"runpod-worker-comfy - queued prompt with ID {prompt_id}")
     except Exception as e:
         return {"error": f"Error queuing prompt: {str(e)}"}
 
     # Poll for completion
-    print(f"runpod-worker-comfy - wait until image generation is complete")
+    print(f"\n\nrunpod-worker-comfy - wait until image generation is complete")
     retries = 0
     try:
         while retries < polling_max_retries:
@@ -306,8 +340,9 @@ def handler(job):
     except Exception as e:
         return {"error": f"Error waiting for image generation: {str(e)}"}
 
+    logger.info("Runpod Handler function finished")
     # Get the generated image and return it as URL in an AWS bucket or as base64
-    return process_output_images(history[prompt_id].get("outputs"), job["id"], job_input.get("output_path"))
+    return process_output_images(history[prompt_id].get("outputs"), job["id"], output_path=output_path)
 
 
 # Start the handler only if this script is run directly

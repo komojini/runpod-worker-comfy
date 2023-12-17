@@ -1,16 +1,16 @@
 {
   "input": {
-    "polling_max_retries": 3000,
+    "polling_max_retries": _POLLING_MAX_RETRIES,
     "output_path": "",
     "comfy_input": {
       "prompt": {
         "3": {
           "inputs": {
-            "seed": 643562270128725,
-            "steps": 20,
-            "cfg": 8,
-            "sampler_name": "euler",
-            "scheduler": "normal",
+            "seed": _SEED,
+            "steps": _STEPS,
+            "cfg": _CFG,
+            "sampler_name": "_SAMPLER_NAME",
+            "scheduler": "_SCHEDULER",
             "denoise": 1,
             "model": [
               "11",
@@ -41,7 +41,7 @@
           "inputs": {
             "width": 1024,
             "height": 1024,
-            "batch_size": 9
+            "batch_size": _BATCH_SIZE
           },
           "class_type": "EmptyLatentImage"
         },
@@ -60,7 +60,7 @@
         },
         "7": {
           "inputs": {
-            "text": "text, watermark, low quality, day, bad body, monotone background, white wall, white background, bad hat, bad costume, 2, double hat, nsfw, bad hands",
+            "text": "_NEGATIVE_PROMPT",
             "clip": [
               "11",
               1
@@ -83,13 +83,13 @@
         },
         "11": {
           "inputs": {
-            "remote_lora_path_or_url": "test/models/jinwook_dog_v1.safetensors",
+            "remote_lora_path_or_url": "_S3_LORA_PATH",
             "strength_model": 1,
             "strength_clip": 1,
-            "BUCKET_ENDPOINT_URL": "",
-            "BUCKET_ACCESS_KEY_ID": "",
-            "BUCKET_SECRET_ACCESS_KEY": "",
-            "BUCKET_NAME": "",
+            "BUCKET_ENDPOINT_URL": "_BUCKET_ENDPOINT_URL",
+            "BUCKET_ACCESS_KEY_ID": "_BUCKET_ACCESS_KEY_ID",
+            "BUCKET_SECRET_ACCESS_KEY": "_BUCKET_SECRET_ACCESS_KEY",
+            "BUCKET_NAME": "_BUCKET_NAME",
             "model": [
               "4",
               0
@@ -103,9 +103,9 @@
         },
         "41": {
           "inputs": {
-            "text": "artistic photo of 1 var_1 var_2 wearing Santa costume, small cute santa hat, Christmas tree, Christmas style, Christmas concept, (Christmas:1.2), presents, (var_1 var_2:1.3), (midnight:1.5), (fancy:1.5), twinkle, colorful background, fancy wallpaper, professional photo, 4k, profile, Christmas socks, socks",
-            "var_1": "zwc",
-            "var_2": "dog",
+            "text": "_POSITIVE_PROMPT",
+            "var_1": "_INSTANCE_PROMPT",
+            "var_2": "_CLASS_PROMPT",
             "var_3": "",
             "var_4": "",
             "var_5": ""
